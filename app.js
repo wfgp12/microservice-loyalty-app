@@ -3,8 +3,11 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-const { connectRabbitMQ, getChannel, closeRabbitMQ } = require('./config/rabbitmq');
+const { connectRabbitMQ, closeRabbitMQ } = require('./config/rabbitmq');
 const sequelize = require('./config/databases');
+const LoyaltyRouter = require('./routes/loyalty-routes');
+
+const { startLoyaltyConsumer } = require('./helpers/loyaltyConsumer');
 
 const app = express();
 app.use(bodyParser.json());
@@ -15,34 +18,9 @@ const PORT = process.env.PORT || 3000;
 sequelize.sync()
 .then(async() => {
         await connectRabbitMQ();
-        console.log('Database connected and models synced');
+        await startLoyaltyConsumer()
 
-        const channel = getChannel();
-        const queue = 'loyaltyPointsQueue';
-
-        channel.assertQueue(queue, {
-            durable: false
-        });
-
-        channel.consume(queue, async (msg) => {
-            const userData = JSON.parse(msg.content.toString());
-            console.log(`Received message for user: ${JSON.stringify(userData)}`);
-
-            // try {
-            //     // Crear o actualizar puntos de lealtad en la base de datos
-            //     const loyaltyRecord = await Loyalty.create({
-            //         user: userData.userId,
-            //         points: userData.points,
-            //         description: 'Initial loyalty points'
-            //     });
-
-            //     console.log(`Loyalty points for user ${userData.userId} created successfully`);
-            // } catch (error) {
-            //     console.error('Error creating loyalty points', error);
-            // }
-        }, {
-            noAck: true
-        });
+        app.use('/api/loyalty', LoyaltyRouter);
 
         app.listen(PORT, () => {
             console.log(`Loyalty service running on port ${PORT}`);
@@ -53,13 +31,11 @@ sequelize.sync()
     });
 
 process.on('SIGINT', () => {
-    console.log(2);
     closeRabbitMQ();
     process.exit();
 });
 
 process.on('SIGTERM', () => {
-    console.log(3);
     closeRabbitMQ();
     process.exit();
 });

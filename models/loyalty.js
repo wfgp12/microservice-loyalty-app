@@ -1,7 +1,7 @@
 const {DataTypes} = require('sequelize');
-const sequelize = require('../config/database');
+const sequelize = require('../config/databases');
 
-const Loyalty = sequelize.define('loyalty', {
+const Loyalty = sequelize.define('loyaltyPoints', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
