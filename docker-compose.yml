@@ -1,0 +1,35 @@
+version: '3.8'
+
+
+services:
+  mysqldb:
+    container_name: loyalty-mysqldb
+    image: mysql
+    env_file:
+      - ./.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+      - MYSQL_DATABASE=$DB
+      - MYSQL_USER=$DB_USER
+      - MYSQL_PASSWORD=$DB_PASS
+    ports:
+      - $DOCKER_DB_PORT:$DB_PORT
+  app:
+    container_name: loyalty-node-back
+    restart: unless-stopped
+    build: .
+    depends_on:
+      - mysqldb
+    links:
+      - mysqldb
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/app
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysqldb
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+    ports:
+      - 8081:80
