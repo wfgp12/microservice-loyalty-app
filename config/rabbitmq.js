@@ -29,31 +29,35 @@ const getChannel = () => {
     return channel;
 };
 
-const closeRabbitMQ = () => {
-    console.log('close');
-    if (channel) {
-        channel.close((err) => {
-            if (err) {
-                console.error('Error closing RabbitMQ channel', err);
-            } else {
-                console.log('RabbitMQ channel closed');
-            }
-        });
-    }
-    console.log('close connection');
-    if (connection) {
-        connection.close((err) => {
-            if (err) {
-                console.error('Error closing RabbitMQ connection', err);
-            } else {
-                console.log('RabbitMQ connection closed');
-            }
-        });
+const closeRabbitMQ = async() => {
+    try {
+        console.log('Closing RabbitMQ connection and channel...');
+        if (channel) {
+            await channel.close((err) => {
+                if (err) {
+                    throw err;
+                } else {
+                    channel = null;
+                    console.log('RabbitMQ channel closed');
+                }
+            });
+        }
+        if (connection) {
+            await connection.close((err) => {
+                if (err) {
+                    throw err;
+                } else {
+                    connection = null
+                    console.log('RabbitMQ connection closed');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error closing RabbitMQ connection:', err);
     }
 };
 
 process.on('exit', (code) => {
-    console.log('1');
     closeRabbitMQ();
     console.log(`About to exit with code: ${code}`);
 });
